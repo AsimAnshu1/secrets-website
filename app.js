@@ -1,9 +1,10 @@
-require("dotenv").config();
+//require("dotenv").config();
 const express = require("express");
 const ejs =require("ejs");
 const bodyParser = require("body-parser");
 const { default: mongoose } = require("mongoose");
-const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
+//const encrypt = require("mongoose-encryption");
 app = express();
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
@@ -19,9 +20,9 @@ async function main() {
     email:String,
     password:String
   });
-  const secret = process.env.SECRET;
+  //const secret = process.env.SECRET;
 
-  userSchema.plugin(encrypt, {secret:secret,encryptedFields: ["password"]});
+  //userSchema.plugin(encrypt, {secret:secret,encryptedFields: ["password"]});
   const User = new mongoose.model("User", userSchema);
 
 
@@ -37,14 +38,14 @@ app.get("/register",function(req,res){
 app.post("/register",async function(req,res){
  const newUser = new User({
     email:req.body.username,
-    password:req.body.password
+    password:md5(req.body.password)
  });
  await newUser.save();
  res.render("secrets");
 });
 app.post("/login",async function(req,res){
     const Email =req.body.username;
-    const password =req.body.password;
+    const password =md5(req.body.password);
     const foundItem = await User.findOne({email:Email});
     if(foundItem===null){
         res.redirect("/login");
