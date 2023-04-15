@@ -2,6 +2,7 @@ const express = require("express");
 const ejs =require("ejs");
 const bodyParser = require("body-parser");
 const { default: mongoose } = require("mongoose");
+const encrypt = require("mongoose-encryption");
 app = express();
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
@@ -13,11 +14,15 @@ async function main() {
 
   // use `await mongoose.connect('mongodb://user:password@127.0.0.1:27017/test');` if your database has auth enabled
 
-  userSchema = mongoose.Schema({
+  userSchema = new mongoose.Schema({
     email:String,
     password:String
   });
-  const User = mongoose.model("User", userSchema);
+  const secret = "thisisourlittlesecret";
+
+  userSchema.plugin(encrypt, {secret:secret,encryptedFields: ["password"]});
+  const User = new mongoose.model("User", userSchema);
+
 
 app.get("/",function(req,res){
     res.render("home");
@@ -41,14 +46,14 @@ app.post("/login",async function(req,res){
     const password =req.body.password;
     const foundItem = await User.findOne({email:Email});
     if(foundItem===null){
-        
+        res.redirect("/login");
     }
     else{
         if(foundItem.password === password){
             res.render("secrets");
         }
         else{
-        
+        res.redirect("/login");
         }
     }
 });
