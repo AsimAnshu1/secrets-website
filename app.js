@@ -3,8 +3,11 @@ const express = require("express");
 const ejs =require("ejs");
 const bodyParser = require("body-parser");
 const { default: mongoose } = require("mongoose");
-const md5 = require("md5");
+const bcrypt = require('bcrypt');
+//const md5 = require("md5");
 //const encrypt = require("mongoose-encryption");
+
+const saltRounds = 10;
 app = express();
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
@@ -35,29 +38,34 @@ app.get("/login",function(req,res){
 app.get("/register",function(req,res){
     res.render("register");
 });
-app.post("/register",async function(req,res){
- const newUser = new User({
-    email:req.body.username,
-    password:md5(req.body.password)
- });
- await newUser.save();
- res.render("secrets");
-});
+app.post("/register", function(req,res){
+    bcrypt.hash(req.body.password, saltRounds, async function(err, hash) {
+        // Store hash in your password DB.
+        const newUser = new User({
+            email:req.body.username,
+            password:hash
+         });
+         await newUser.save();
+         res.render("secrets");
+        });
+    });
+ 
 app.post("/login",async function(req,res){
     const Email =req.body.username;
-    const password =md5(req.body.password);
+    // const password =md5(req.body.password);
     const foundItem = await User.findOne({email:Email});
     if(foundItem===null){
         res.redirect("/login");
     }
-    else{
-        if(foundItem.password === password){
+    bcrypt.compare(req.body.password,foundItem.password, function(err, result) {
+        if(result == true){
             res.render("secrets");
         }
         else{
         res.redirect("/login");
         }
-    }
+    });
+
 });
 
 app.listen(3000,function(){
